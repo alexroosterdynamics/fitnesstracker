@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DaySection from "@/components/DaySection";
 import Splash from "@/components/Splash";
+import AudioPlayer from "@/components/AudioPlayer"; // 👈 add this
 import data from "@/data/exercises.json";
 
 // ISO week number (1-53) + year
@@ -34,7 +35,7 @@ const ORDER = [
 
 export default function Page() {
   const [state, setState] = useState({ weights: {}, status: {} });
-  const [showSplash, setShowSplash] = useState(true); // 👈 splash flag
+  const [showSplash, setShowSplash] = useState(true);
   const { key: weekKey, week } = useMemo(() => getWeekInfo(), []);
   const days = useMemo(
     () => ORDER.map((d) => ({ name: d, items: data[d] || [] })),
@@ -42,7 +43,7 @@ export default function Page() {
   );
 
   useEffect(() => {
-    const t = setTimeout(() => setShowSplash(false), 1600); // fade after 1.6s
+    const t = setTimeout(() => setShowSplash(false), 1500);
     return () => clearTimeout(t);
   }, []);
 
@@ -103,13 +104,14 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 relative">
-      {/* 🔥 Cool splash */}
       <Splash show={showSplash} />
 
       <main className="max-w-md mx-auto p-3 pb-20 space-y-6">
-        <header className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur px-3 py-3 border-b border-slate-800">
-          <h1 className="text-2xl font-extrabold tracking-tight text-white">
-            🏋️ Andy &amp; Petronela
+        <header className="sticky top-0 z-10 px-3 py-3 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            <span className="bg-gradient-to-r from-emerald-300 via-emerald-400 to-sky-400 bg-clip-text text-transparent">
+              Andy &amp; Petronela
+            </span>
           </h1>
           <p className="text-xs text-slate-400">Week W{week}</p>
         </header>
@@ -126,6 +128,9 @@ export default function Page() {
           />
         ))}
       </main>
+
+      {/* 👇 persistent mini-player with its own Play button */}
+      <AudioPlayer src="/audio/fitness-mix.mp3" />
     </div>
   );
 }

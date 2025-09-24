@@ -3,132 +3,157 @@
     "Tuesday": [],
     "Wednesday": [
         {
-            "title": "Warmup",
+            "title": "Warmup Wednesday",
             "description": "5–7 min light cardio + shoulder/elbow mobility.",
-            "video": "warmup"
+            "video": "Warmup Wednesday"
         },
         {
             "title": "Dumbbell Bench Press",
-            "description": "Flat bench chest press with dumbbells — 3×8.",
+            "description": "Flat bench chest press — 3×8.",
             "video": "Dumbbell Bench Press"
         },
         {
-            "title": "Dumbbell Floor Fly",
-            "description": "Lie on the floor, slow wide arcs to target chest — 3×8.",
-            "video": "Dumbbell Floor Fly"
+            "title": "Dumbbell Bench Flyes",
+            "description": "On the flat bench; wide controlled arcs — 3×8.",
+            "video": "Dumbbell Bench Flyes"
+        },
+        {
+            "title": "Dumbbell Skull Crushers",
+            "description": "Flat bench; elbow stays vertical — 3×8.",
+            "video": "Dumbbell Skull Crushers"
         },
         {
             "title": "Overhead Dumbbell Triceps Extension",
-            "description": "Standing single or double DB overhead extensions — 3×8.",
+            "description": "Standing single or double DB — 3×8.",
             "video": "Overhead Dumbbell Triceps Extension"
         },
         {
             "title": "Bench Dips",
-            "description": "Hands on bench, feet on floor; keep shoulders down — 3×8.",
+            "description": "Hands on bench, feet on floor — 3×8.",
             "video": "Bench Dips"
         }
     ],
     "Thursday": [
         {
-            "title": "Warmup",
+            "title": "Warmup Thursday",
             "description": "5–7 min light cardio + upper-back activation.",
-            "video": "warmup"
+            "video": "Warmup Thursday"
         },
         {
             "title": "One-Arm Dumbbell Row",
-            "description": "Support on bench, row the DB to hip — 3×8/side.",
+            "description": "Support on bench, row DB to hip — 3×8/side.",
             "video": "One-Arm Dumbbell Row"
         },
         {
             "title": "Dumbbell Romanian Deadlift",
-            "description": "Hinge at hips, neutral back, slow stretch — 3×8.",
+            "description": "Hinge at hips, neutral back — 3×8.",
             "video": "Dumbbell Romanian Deadlift"
         },
         {
+            "title": "Dumbbell Pullover",
+            "description": "Flat bench; lats + chest; slow control — 3×8.",
+            "video": "Dumbbell Pullover"
+        },
+        {
             "title": "Dumbbell Reverse Fly",
-            "description": "Hip hinge, raise DBs to T-shape for upper back — 3×8.",
+            "description": "Hip hinge; raise to a T — 3×8.",
             "video": "Dumbbell Reverse Fly"
         },
         {
             "title": "Dumbbell Hammer Curl",
-            "description": "Neutral grip curls for biceps/forearms — 3×8.",
+            "description": "Neutral grip; squeeze — 3×8.",
             "video": "Dumbbell Hammer Curl"
         }
     ],
     "Friday": [
         {
-            "title": "Warmup",
+            "title": "Warmup Friday",
             "description": "5–7 min light cardio + shoulder circles/band pull-aparts.",
-            "video": "warmup"
+            "video": "Warmup Friday"
         },
         {
             "title": "Dumbbell Shoulder Press",
-            "description": "Standing strict press, no lean — 3×8.",
+            "description": "Seating strict press — 3×8.",
             "video": "Dumbbell Shoulder Press"
         },
         {
+            "title": "Dumbbell Upright Row",
+            "description": "DBs close; elbows lead — 3×8.",
+            "video": "Dumbbell Upright Row"
+        },
+        {
             "title": "Dumbbell Lateral Raise",
-            "description": "Soft elbows, raise to shoulder height — 3×8.",
+            "description": "Soft elbows; to shoulder height — 3×8.",
             "video": "Dumbbell Lateral Raise"
+        },
+        {
+            "title": "Rear Delt Row",
+            "description": "Hip hinge; row toward ribs — 3×8.",
+            "video": "Rear Delt Row"
         },
         {
             "title": "Dumbbell Front Raise",
             "description": "Raise DBs in front to shoulder height — 3×8.",
             "video": "Dumbbell Front Raise"
-        },
-        {
-            "title": "Rear Delt Row",
-            "description": "Hip hinge, row out toward ribcage for rear delts — 3×8.",
-            "video": "Rear Delt Row"
         }
     ],
     "Saturday": [
         {
-            "title": "Warmup",
+            "title": "Warmup Saturday",
             "description": "5–7 min light cardio + core activation.",
-            "video": "warmup"
+            "video": "Warmup Saturday"
         },
         {
             "title": "Goblet Squat",
-            "description": "Hold DB at chest, sit deep — 3×8.",
+            "description": "Hold DB at chest; sit deep — 3×8.",
             "video": "Goblet Squat"
         },
         {
             "title": "Push-Up",
-            "description": "Push Ups, normal — 3×8.",
+            "description": "Body straight; chest to floor — 3×8.",
             "video": "Push-Up"
         },
         {
-            "title": "Crunches (Normal)",
-            "description": "Controlled floor crunches; ribcage toward pelvis — 3×8.",
-            "video": "Crunches (Normal)"
+            "title": "Dumbbell Hip Thrust",
+            "description": "Upper back on bench; drive hips — 3×8.",
+            "video": "Dumbbell Hip Thrust"
+        },
+        {
+            "title": "Crunches",
+            "description": "Controlled floor crunches — 3×8.",
+            "video": "Crunches"
         },
         {
             "title": "Russian Twist",
-            "description": "Lean back, twist side to side — 3×8/side.",
+            "description": "Lean back; twist side to side — 3×8/side.",
             "video": "Russian Twist"
         }
     ],
     "Sunday": [
         {
-            "title": "Warmup",
+            "title": "Warmup Sunday",
             "description": "5–7 min light cardio + hip/ankle mobility.",
-            "video": "warmup"
+            "video": "Warmup Sunday"
         },
         {
             "title": "Dumbbell Squat",
-            "description": "DBs at sides or rack position — 3×8.",
+            "description": "DBs at sides or rack — 3×8.",
             "video": "Dumbbell Squat"
         },
         {
             "title": "Dumbbell Reverse Lunge",
-            "description": "Step back, front knee tracks toes — 3×8/side.",
+            "description": "Step back; front knee tracks toes — 3×8/side.",
             "video": "Dumbbell Reverse Lunge"
         },
         {
-            "title": "Dumbbell Romanian Deadlift (Leg Day)",
-            "description": "Hamstring focus, slow eccentric — 3×8.",
-            "video": "Dumbbell Romanian Deadlift (Leg Day)"
+            "title": "Dumbbell Romanian Deadlift (leg day)",
+            "description": "Hamstrings focus; slow eccentric — 3×8.",
+            "video": "Dumbbell Romanian Deadlift (leg day)"
+        },
+        {
+            "title": "Glute Bridge (Floor)",
+            "description": "On floor; squeeze glutes at top — 3×8.",
+            "video": "Glute Bridge (Floor)"
         },
         {
             "title": "Standing Calf Raise",
