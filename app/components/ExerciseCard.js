@@ -312,7 +312,6 @@ export default function ExerciseCard({
                   ref={videoRef}
                   src={src}
                   autoPlay
-                  muted
                   loop
                   playsInline
                   className="w-full h-48 object-cover bg-black"
