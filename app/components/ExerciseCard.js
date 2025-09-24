@@ -170,6 +170,32 @@ export default function ExerciseCard({
     };
   }, []);
 
+  // Apply different styles based on fullscreen state
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    if (isFullscreen) {
+      // In fullscreen, make video fill the entire screen
+      vid.style.width = "100vw";
+      vid.style.height = "100vh";
+      vid.style.objectFit = "contain"; // or 'cover' if you want to fill completely
+      vid.style.position = "fixed";
+      vid.style.top = "0";
+      vid.style.left = "0";
+      vid.style.zIndex = "9999";
+    } else {
+      // Reset to normal styles when exiting fullscreen
+      vid.style.width = "";
+      vid.style.height = "";
+      vid.style.objectFit = "";
+      vid.style.position = "";
+      vid.style.top = "";
+      vid.style.left = "";
+      vid.style.zIndex = "";
+    }
+  }, [isFullscreen]);
+
   // Gradient shell for glass border
   const shell = completed
     ? "from-emerald-600/50 via-emerald-500/25 to-sky-500/25"
