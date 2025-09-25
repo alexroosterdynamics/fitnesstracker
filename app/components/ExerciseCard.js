@@ -42,6 +42,9 @@ function Check({ checked, onChange }) {
 }
 
 export default function ExerciseCard({
+  id, // 👈 added
+  isOpen, // 👈 added (controlled open from parent)
+  setOpenCard, // 👈 added (setter from parent)
   day,
   index,
   exercise,
@@ -50,15 +53,21 @@ export default function ExerciseCard({
   onToggle,
   onSave,
 }) {
-  const [open, setOpen] = useState(false);
+  // (removed local `open` state; now controlled via isOpen)
   const [local, setLocal] = useState(weights);
   const [saved, setSaved] = useState(false);
   const [growthMsg, setGrowthMsg] = useState("");
+
+  // --- Video playback state ---
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // --- Fullscreen state/refs ---
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // --- Double tap detection ---
+  const lastTapRef = useRef(0);
 
   // --- Mute state ---
   const [isMuted, setIsMuted] = useState(true); // Start muted by default
@@ -96,6 +105,42 @@ export default function ExerciseCard({
     if (ups.length) setGrowthMsg(ups.join("\n"));
   };
 
+  // --- Toggle play/pause function ---
+  const togglePlayPause = (e) => {
+    e.stopPropagation(); // Prevent other click handlers
+    const vid = videoRef.current;
+    if (vid) {
+      if (vid.paused) {
+        vid.play();
+        setIsPlaying(true);
+      } else {
+        vid.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  // --- Handle video tap (single tap = play/pause, double tap = fullscreen) ---
+  const handleVideoTap = (e) => {
+    e.stopPropagation();
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTapRef.current;
+
+    if (tapLength < 300 && tapLength > 0) {
+      // Double tap detected - toggle fullscreen
+      if (isFullscreen || document.fullscreenElement) {
+        exitFullscreen();
+      } else {
+        enterFullscreen();
+      }
+    } else {
+      // Single tap - toggle play/pause
+      togglePlayPause(e);
+    }
+
+    lastTapRef.current = currentTime;
+  };
+
   // --- Toggle mute function ---
   const toggleMute = (e) => {
     e.stopPropagation(); // Prevent other click handlers
@@ -106,6 +151,42 @@ export default function ExerciseCard({
     }
   };
 
+  // --- Handle card expand/collapse (controlled) ---
+  const handleToggleOpen = () => {
+    if (isOpen) {
+      setOpenCard(null); // close if this one is open
+    } else {
+      setOpenCard(id); // open this and implicitly close others
+    }
+
+    const vid = videoRef.current;
+    if (vid) {
+      if (!isOpen) {
+        // being opened
+        vid.play();
+        setIsPlaying(true);
+      } else {
+        // being closed
+        vid.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  // --- Sync video state when open changes ---
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (vid) {
+      if (isOpen) {
+        vid.play();
+        setIsPlaying(true);
+      } else {
+        vid.pause();
+        setIsPlaying(false);
+      }
+    }
+  }, [isOpen]);
+
   // --- Sync muted state with video element ---
   useEffect(() => {
     const vid = videoRef.current;
@@ -113,6 +194,23 @@ export default function ExerciseCard({
       vid.muted = isMuted;
     }
   }, [isMuted]);
+
+  // --- Listen for video play/pause events ---
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+
+    vid.addEventListener("play", onPlay);
+    vid.addEventListener("pause", onPause);
+
+    return () => {
+      vid.removeEventListener("play", onPlay);
+      vid.removeEventListener("pause", onPause);
+    };
+  }, []);
 
   // --- Fullscreen helpers (desktop + iOS/Android) ---
   const enterFullscreen = async () => {
@@ -166,7 +264,8 @@ export default function ExerciseCard({
     }
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = (e) => {
+    e.stopPropagation(); // Prevent other click handlers
     if (isFullscreen || document.fullscreenElement) exitFullscreen();
     else enterFullscreen();
   };
@@ -234,10 +333,7 @@ export default function ExerciseCard({
         <header className="flex items-center gap-3 px-4 py-3">
           <Check checked={completed} onChange={(v) => onToggle(v)} />
 
-          <button
-            onClick={() => setOpen((o) => !o)}
-            className="flex-1 text-left"
-          >
+          <button onClick={handleToggleOpen} className="flex-1 text-left">
             <div className="flex items-center gap-2">
               <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700 text-slate-300 bg-slate-900/60">
                 {index === 0 ? "Warmup" : `#${index}`}
@@ -247,7 +343,7 @@ export default function ExerciseCard({
               </h3>
             </div>
             <p className="text-[11px] text-slate-400">
-              Tap to {open ? "collapse" : "expand"}
+              Tap to {isOpen ? "collapse" : "expand"}
             </p>
           </button>
 
@@ -266,7 +362,7 @@ export default function ExerciseCard({
               viewBox="0 0 24 24"
               className={[
                 "h-4 w-4 text-slate-400 transition-transform duration-300 ease-in-out",
-                open ? "rotate-180" : "rotate-0",
+                isOpen ? "rotate-180" : "rotate-0",
               ].join(" ")}
             >
               <path
@@ -281,7 +377,9 @@ export default function ExerciseCard({
         <div
           className={[
             "grid transition-all duration-300 ease-in-out",
-            open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+            isOpen
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0",
           ].join(" ")}
         >
           <div className="overflow-hidden">
@@ -294,7 +392,9 @@ export default function ExerciseCard({
                   <span className="text-xs text-slate-400">Andy (kg)</span>
                   <input
                     inputMode="decimal"
-                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white placeholder:text-slate-600"
+                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2
+                  focus:outline-none focus:ring-1 focus:ring-emerald-500
+                  text-white placeholder:text-slate-600 text-[16px] leading-6"
                     value={local.Andy}
                     onChange={(e) =>
                       setLocal((s) => ({ ...s, Andy: e.target.value }))
@@ -306,7 +406,9 @@ export default function ExerciseCard({
                   <span className="text-xs text-slate-400">Petronela (kg)</span>
                   <input
                     inputMode="decimal"
-                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white placeholder:text-slate-600"
+                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2
+                  focus:outline-none focus:ring-1 focus:ring-emerald-500
+                  text-white placeholder:text-slate-600 text-[16px] leading-6"
                     value={local.Petronela}
                     onChange={(e) =>
                       setLocal((s) => ({ ...s, Petronela: e.target.value }))
@@ -324,7 +426,7 @@ export default function ExerciseCard({
                 {saved ? "Saved ✓" : "Save"}
               </button>
 
-              {/* Media with fullscreen control */}
+              {/* Media with video controls */}
               <div
                 ref={containerRef}
                 className="relative overflow-hidden rounded-2xl border border-slate-800"
@@ -332,30 +434,62 @@ export default function ExerciseCard({
                 <video
                   ref={videoRef}
                   src={src}
-                  autoPlay
                   loop
                   muted
                   playsInline
-                  onClick={toggleMute}
+                  onClick={handleVideoTap}
                   className="w-full h-48 object-cover bg-black cursor-pointer"
                 />
 
-                {/* Mute indicator */}
+                {/* Play/Pause indicator */}
                 <div
                   className={[
-                    "absolute left-2 top-2 rounded-lg border border-slate-700/70 bg-slate-900/70 backdrop-blur px-2 py-1 transition-opacity duration-300",
-                    isMuted ? "opacity-100" : "opacity-0",
+                    "absolute left-2 bottom-2 rounded-lg border border-slate-700/70 bg-slate-900/70 backdrop-blur px-2 py-1 transition-opacity duration-300",
+                    !isPlaying ? "opacity-100" : "opacity-0",
                   ].join(" ")}
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4 text-slate-200">
-                    <path
-                      fill="currentColor"
-                      d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
-                    />
+                    <path fill="currentColor" d="M8 5v14l11-7z" />
                   </svg>
                 </div>
 
-                {/* Fullscreen toggle button */}
+                {/* Volume control button */}
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  className="absolute left-2 top-2 rounded-lg border border-slate-700/70 bg-slate-900/70 backdrop-blur px-2 py-1 text-[11px] text-slate-200 hover:border-slate-600 active:scale-95 transition"
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted ? (
+                    // Muted icon
+                    <svg viewBox="0 0 24 24" className="h-4 w-4">
+                      <path
+                        fill="currentColor"
+                        d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
+                      />
+                    </svg>
+                  ) : (
+                    // Unmuted icon
+                    <svg viewBox="0 0 24 24" className="h-4 w-4">
+                      <path
+                        fill="currentColor"
+                        d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+                      />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Helper text for exiting fullscreen */}
+                {isFullscreen && (
+                  <div
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-black/50 px-3 py-1 text-sm text-white pointer-events-none transition-opacity duration-300"
+                    style={{ zIndex: 10000 }}
+                  >
+                    Double tap to exit
+                  </div>
+                )}
+
+                {/* Fullscreen toggle button (Normal view) */}
                 <button
                   type="button"
                   onClick={toggleFullscreen}

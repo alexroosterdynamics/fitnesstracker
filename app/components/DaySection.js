@@ -25,11 +25,13 @@ export default function DaySection({
   weights,
   onToggle,
   onSave,
+  openCard, // 👈 from page
+  setOpenCard, // 👈 from page
 }) {
   const isRest = day === "Monday" || day === "Tuesday";
   const [celebrate, setCelebrate] = useState(false);
 
-  // ✅ Count ALL items (warmup included)
+  // Count ALL items (warmup included)
   const counts = useMemo(() => {
     const total = items?.length || 0;
     const done = Object.values(status || {}).filter(Boolean).length;
@@ -62,7 +64,6 @@ export default function DaySection({
             )}
           </div>
 
-          {/* progress pill (includes warmup) */}
           {!isRest && (
             <div className="text-[11px] text-slate-300 flex items-center gap-2">
               <div className="h-1.5 w-16 rounded-full bg-slate-800 overflow-hidden">
@@ -93,14 +94,19 @@ export default function DaySection({
             </p>
           ) : (
             (items || []).map((ex, i) => {
+              const id = `${day}-${i}`; // 👈 unique per card across the app
               const key = slugify(ex.title);
               const w = (weights && (weights[key] || weights[i])) || {
                 Andy: "",
                 Petronela: "",
               };
+
               return (
                 <ExerciseCard
-                  key={`${day}-${i}`}
+                  key={id}
+                  id={id} // 👈 pass id
+                  isOpen={openCard === id} // 👈 controlled open
+                  setOpenCard={setOpenCard} // 👈 so card can request open/close
                   day={day}
                   index={i}
                   exercise={ex}

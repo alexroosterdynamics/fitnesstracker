@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DaySection from "@/components/DaySection";
 import Splash from "@/components/Splash";
-import AudioPlayer from "@/components/AudioPlayer"; // 👈 add this
+import AudioPlayer from "@/components/AudioPlayer";
 import data from "@/data/exercises.json";
 
 // ISO week number (1-53) + year
@@ -36,6 +36,7 @@ const ORDER = [
 export default function Page() {
   const [state, setState] = useState({ weights: {}, status: {} });
   const [showSplash, setShowSplash] = useState(true);
+  const [openCard, setOpenCard] = useState(null); // 👈 globally controlled expanded card id
   const { key: weekKey, week } = useMemo(() => getWeekInfo(), []);
   const days = useMemo(
     () => ORDER.map((d) => ({ name: d, items: data[d] || [] })),
@@ -125,12 +126,13 @@ export default function Page() {
             weights={weekWeights[name] || {}}
             onToggle={updateStatus}
             onSave={saveWeights}
+            openCard={openCard} // 👈 pass global open id
+            setOpenCard={setOpenCard} // 👈 pass setter
           />
         ))}
       </main>
 
-      {/* 👇 persistent mini-player with its own Play button */}
-      <AudioPlayer src="/audio/fitness-mix.mp3" />
+      <AudioPlayer />
     </div>
   );
 }
