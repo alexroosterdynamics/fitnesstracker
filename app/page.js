@@ -23,25 +23,14 @@ function getWeekInfo(d = new Date()) {
   return { year, week, key: `${year}-W${week}` };
 }
 
-const ORDER = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
 export default function Page() {
   const [state, setState] = useState({ weights: {}, status: {} });
   const [showSplash, setShowSplash] = useState(true);
-  const [openCard, setOpenCard] = useState(null); // 👈 globally controlled expanded card id
+  const [openCard, setOpenCard] = useState(null); // single expanded card
   const { key: weekKey, week } = useMemo(() => getWeekInfo(), []);
-  const days = useMemo(
-    () => ORDER.map((d) => ({ name: d, items: data[d] || [] })),
-    []
-  );
+  const days = useMemo(() => ORDER.map((d) => ({ name: d, items: data[d] || [] })), []);
 
   useEffect(() => {
     const t = setTimeout(() => setShowSplash(false), 1500);
@@ -53,6 +42,7 @@ export default function Page() {
       try {
         const res = await fetch("/api/state", { cache: "no-store" });
         const s = await res.json();
+        // weights are GLOBAL now
         setState({ weights: s.weights || {}, status: s.status || {} });
       } catch {}
     })();
@@ -65,12 +55,9 @@ export default function Page() {
         ...s.status,
         [weekKey]: {
           ...(s.status[weekKey] || {}),
-          [day]: {
-            ...((s.status[weekKey] || {})[day] || {}),
-            [idx]: completed,
-          },
-        },
-      },
+          [day]: { ...((s.status[weekKey] || {})[day] || {}), [idx]: completed }
+        }
+      }
     }));
     await fetch("/api/complete", {
       method: "POST",
@@ -79,29 +66,27 @@ export default function Page() {
     });
   };
 
+  // Save weights globally (persist across weeks)
   const saveWeights = async (day, slug, weights) => {
     setState((s) => ({
       ...s,
       weights: {
-        ...s.weights,
-        [weekKey]: {
-          ...(s.weights[weekKey] || {}),
-          [day]: {
-            ...((s.weights[weekKey] || {})[day] || {}),
-            [slug]: weights,
-          },
+        ...(s.weights || {}),
+        [day]: {
+          ...((s.weights || {})[day] || {}),
+          [slug]: weights,
         },
       },
     }));
     await fetch("/api/weight", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ week: weekKey, day, key: slug, weights }),
+      body: JSON.stringify({ day, key: slug, weights }),
     });
   };
 
   const weekStatus = state.status[weekKey] || {};
-  const weekWeights = state.weights[weekKey] || {};
+  const globalWeights = state.weights || {};
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 relative">
@@ -123,11 +108,11 @@ export default function Page() {
             day={name}
             items={items}
             status={weekStatus[name] || {}}
-            weights={weekWeights[name] || {}}
+            weights={globalWeights[name] || {}}
             onToggle={updateStatus}
             onSave={saveWeights}
-            openCard={openCard} // 👈 pass global open id
-            setOpenCard={setOpenCard} // 👈 pass setter
+            openCard={openCard}
+            setOpenCard={setOpenCard}
           />
         ))}
       </main>

@@ -3,11 +3,23 @@ import { getCol } from "@/lib/mongo";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Save weights GLOBALLY (not per week).
+ * Body: { day, key, weights: { Andy, Petronela } }
+ * Mongo shape:
+ *   _id: "weights"
+ *   weights: {
+ *     [day]: {
+ *       [slug]: { Andy: "20", Petronela: "10" }
+ *     }
+ *   }
+ */
 export async function POST(req) {
   try {
-    const { week, day, key, weights } = await req.json();
-    if (!week || !day || !key || !weights)
-      return NextResponse.json({ ok: false }, { status: 400 });
+    const { day, key, weights } = await req.json();
+    if (!day || !key || !weights) {
+      return NextResponse.json({ ok: false, error: "Missing fields" }, { status: 400 });
+    }
 
     const clean = (v) => String(v ?? "").replace(/[^\d.]/g, "");
     const payload = {
@@ -16,7 +28,8 @@ export async function POST(req) {
     };
 
     const col = await getCol();
-    const path = `weights.${week}.${day}.${key}`;
+    // ⬇️ No week in the path anymore
+    const path = `weights.${day}.${key}`;
     await col.updateOne(
       { _id: "weights" },
       { $set: { [path]: payload } },
