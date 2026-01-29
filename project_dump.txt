@@ -869,703 +869,183 @@ import ExerciseCard from "./ExerciseCard";
 import Modal from "./Modal";
 import { useMemo, useState } from "react";
 
-function slugify(title = "") {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+const slugify = (t = "") => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-const GROUPS = {
-  Wednesday: "Chest & Triceps",
-  Thursday: "Back & Biceps",
-  Friday: "Shoulders",
-  Saturday: "Full Body / Core",
-  Sunday: "Legs",
-};
-
-export default function DaySection({
-  day,
-  items,
-  status,
-  weights,
-  onToggle,
-  onSave,
-  openCard, // 👈 from page
-  setOpenCard, // 👈 from page
-}) {
-  const isRest = day === "Monday" || day === "Tuesday";
+export default function DaySection({ day, items, status, weights, onToggle, onSave, openCard, setOpenCard }) {
   const [celebrate, setCelebrate] = useState(false);
+  const isRest = day === "Monday" || day === "Tuesday";
 
-  // Count ALL items (warmup included)
   const counts = useMemo(() => {
     const total = items?.length || 0;
     const done = Object.values(status || {}).filter(Boolean).length;
-    return { done, total };
+    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
   }, [items, status]);
 
   const handleToggle = async (idx, v) => {
-    const next = { ...(status || {}) };
-    next[idx] = v;
-    const total = items?.length || 0;
-    const done = Object.values(next).filter(Boolean).length;
-    if (done >= total && total > 0) setCelebrate(true);
+    if (v && counts.done + 1 === counts.total) setCelebrate(true);
     await onToggle(day, idx, v);
   };
 
   return (
-    <section className="scroll-mt-16">
-      {/* Glassy section header */}
-      <div className="relative rounded-3xl border border-slate-800/70 bg-slate-900/50 backdrop-blur shadow-xl p-4">
-        <div className="pointer-events-none absolute top-0 left-0 h-px w-full bg-gradient-to-r from-emerald-500/40 via-sky-500/30 to-transparent" />
+    <section className="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex items-baseline justify-between mb-4 px-1 border-b border-slate-800 pb-2">
+        <h2 className="text-xl font-bold text-slate-100">{day}</h2>
+        {!isRest && (
+          <span className="text-xs font-mono text-slate-500 uppercase tracking-tighter">
+            {counts.done}/{counts.total} COMPLETED — {counts.pct}%
+          </span>
+        )}
+      </div>
 
-        <header className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400/70" />
-            <h2 className="text-base font-semibold text-white">{day}</h2>
-            {GROUPS[day] && (
-              <span className="text-[11px] px-2 py-1 rounded-full border border-slate-700/70 text-slate-300 bg-slate-900/50 backdrop-blur">
-                {GROUPS[day]}
-              </span>
-            )}
+      <div className="divide-y divide-slate-800 border-y border-slate-800 bg-slate-950/50">
+        {isRest ? (
+          <div className="py-12 text-center text-slate-500 italic text-sm tracking-wide">
+            No scheduled training. Focus on recovery.
           </div>
-
-          {!isRest && (
-            <div className="text-[11px] text-slate-300 flex items-center gap-2">
-              <div className="h-1.5 w-16 rounded-full bg-slate-800 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-sky-400 transition-all"
-                  style={{
-                    width:
-                      counts.total > 0
-                        ? `${Math.min(
-                            100,
-                            Math.round((counts.done / counts.total) * 100)
-                          )}%`
-                        : "0%",
-                  }}
-                />
-              </div>
-              <span className="tabular-nums">
-                {counts.done}/{counts.total}
-              </span>
-            </div>
-          )}
-        </header>
-
-        <div className="mt-3 space-y-3">
-          {isRest ? (
-            <p className="text-sm text-slate-300/90 border border-slate-800/80 rounded-2xl p-4 bg-slate-900/50 backdrop-blur shadow-inner">
-              Rest day 😌
-            </p>
-          ) : (
-            (items || []).map((ex, i) => {
-              const id = `${day}-${i}`; // 👈 unique per card across the app
-              const key = slugify(ex.title);
-              const w = (weights && (weights[key] || weights[i])) || {
-                Andy: "",
-                Petronela: "",
-              };
-
-              return (
-                <ExerciseCard
-                  key={id}
-                  id={id} // 👈 pass id
-                  isOpen={openCard === id} // 👈 controlled open
-                  setOpenCard={setOpenCard} // 👈 so card can request open/close
-                  day={day}
-                  index={i}
-                  exercise={ex}
-                  completed={!!status[i]}
-                  weights={w}
-                  onToggle={(v) => handleToggle(i, v)}
-                  onSave={(payload) => onSave(day, key, payload)}
-                />
-              );
-            })
-          )}
-        </div>
+        ) : (
+          items.map((ex, i) => (
+            <ExerciseCard
+              key={`${day}-${i}`} id={`${day}-${i}`}
+              isOpen={openCard === `${day}-${i}`} setOpenCard={setOpenCard}
+              index={i} exercise={ex} completed={!!status[i]}
+              weights={weights?.[slugify(ex.title)] || weights?.[i] || { Andy: "", Petronela: "" }}
+              onToggle={(v) => handleToggle(i, v)}
+              onSave={(p) => onSave(day, slugify(ex.title), p)}
+            />
+          ))
+        )}
       </div>
 
       {celebrate && (
-        <Modal onClose={() => setCelebrate(false)} title={`${day} complete`}>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-emerald-600/20 border border-emerald-500/30 grid place-items-center">
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-emerald-300">
-                  <path
-                    fill="currentColor"
-                    d="M9.55 17.05 4.5 12l1.4-1.4 3.65 3.6 8.1-8.1L19 7.5 9.55 17.05z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-slate-200">
-                  Everything for {day} is done.
-                </p>
-                <p className="text-xs text-slate-400">
-                  Great pace—see you tomorrow.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setCelebrate(false)}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-sky-500 text-white py-2 text-sm font-medium"
-            >
-              Continue
-            </button>
+        <Modal onClose={() => setCelebrate(false)} title="Session Logged">
+          <div className="text-center py-4">
+            <p className="text-slate-300 text-sm mb-6">All sets for {day} are finalized. Great consistency.</p>
+            <button onClick={() => setCelebrate(false)} className="w-full py-3 bg-white text-black font-bold text-sm hover:bg-slate-200 transition">Continue</button>
           </div>
         </Modal>
       )}
     </section>
   );
 }
-
 ================================================================================
 FILE: app\components\ExerciseCard.js
 ================================================================================
 
 "use client";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
 
-function Check({ checked, onChange }) {
-  const toggle = () => onChange(!checked);
-  const onKey = (e) => {
-    if (e.key === " " || e.key === "Enter") {
-      e.preventDefault();
-      toggle();
-    }
-  };
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      onClick={toggle}
-      onKeyDown={onKey}
-      className={[
-        "h-5 w-5 rounded-md border transition-all duration-200 ease-in-out",
-        checked
-          ? "bg-emerald-600 border-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.15)] scale-95"
-          : "bg-slate-800/80 border-slate-700 hover:border-slate-600",
-      ].join(" ")}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className={[
-          "mx-auto h-3 w-3 text-white transition-transform duration-200 ease-in-out",
-          checked ? "scale-100" : "scale-0",
-        ].join(" ")}
-        aria-hidden="true"
-      >
-        <path
-          fill="currentColor"
-          d="M20.285 6.709a1 1 0 0 0-1.414-1.418l-8.5 8.51-3.242-3.243a1 1 0 1 0-1.415 1.414l3.95 3.95a1 1 0 0 0 1.415 0l9.206-9.213z"
-        />
-      </svg>
-    </button>
-  );
-}
-
-export default function ExerciseCard({
-  id, // 👈 added
-  isOpen, // 👈 added (controlled open from parent)
-  setOpenCard, // 👈 added (setter from parent)
-  day,
-  index,
-  exercise,
-  completed,
-  weights,
-  onToggle,
-  onSave,
-}) {
-  // (removed local `open` state; now controlled via isOpen)
+export default function ExerciseCard({ id, isOpen, setOpenCard, index, exercise, completed, weights, onToggle, onSave }) {
   const [local, setLocal] = useState(weights);
   const [saved, setSaved] = useState(false);
   const [growthMsg, setGrowthMsg] = useState("");
-
-  // --- Video playback state ---
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  // --- Fullscreen state/refs ---
+  const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
-  const containerRef = useRef(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // --- Double tap detection ---
   const lastTapRef = useRef(0);
 
-  // --- Mute state ---
-  const [isMuted, setIsMuted] = useState(true); // Start muted by default
-
+  useEffect(() => setLocal(weights), [weights]);
   useEffect(() => {
-    setLocal(weights || { Andy: "", Petronela: "" });
-  }, [weights]);
-
-  const sanitize = (v) => String(v ?? "").replace(/[^\d.]/g, "");
-  const num = (v) => (v === "" || v == null ? 0 : parseFloat(v));
-  const src = `/videos/${(exercise.video || exercise.title).trim()}.mp4`;
-
-  const chips = useMemo(() => {
-    const a = weights?.Andy ? `${weights.Andy}kg` : "—";
-    const p = weights?.Petronela ? `${weights.Petronela}kg` : "—";
-    return { a, p };
-  }, [weights]);
-
-  const save = async () => {
-    const prevA = num(weights.Andy);
-    const prevP = num(weights.Petronela);
-    const nextA = num(sanitize(local.Andy));
-    const nextP = num(sanitize(local.Petronela));
-    const ups = [];
-    if (nextA > prevA) ups.push(`Andy +${(nextA - prevA).toFixed(0)} kg`);
-    if (nextP > prevP) ups.push(`Petronela +${(nextP - prevP).toFixed(0)} kg`);
-
-    setSaved(false);
-    await onSave({
-      Andy: sanitize(local.Andy),
-      Petronela: sanitize(local.Petronela),
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1000);
-    if (ups.length) setGrowthMsg(ups.join("\n"));
-  };
-
-  // --- Toggle play/pause function ---
-  const togglePlayPause = (e) => {
-    e.stopPropagation(); // Prevent other click handlers
-    const vid = videoRef.current;
-    if (vid) {
-      if (vid.paused) {
-        vid.play();
-        setIsPlaying(true);
-      } else {
-        vid.pause();
-        setIsPlaying(false);
-      }
-    }
-  };
-
-  // --- Handle video tap (single tap = play/pause, double tap = fullscreen) ---
-  const handleVideoTap = (e) => {
-    e.stopPropagation();
-    const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTapRef.current;
-
-    if (tapLength < 300 && tapLength > 0) {
-      // Double tap detected - toggle fullscreen
-      if (isFullscreen || document.fullscreenElement) {
-        exitFullscreen();
-      } else {
-        enterFullscreen();
-      }
-    } else {
-      // Single tap - toggle play/pause
-      togglePlayPause(e);
-    }
-
-    lastTapRef.current = currentTime;
-  };
-
-  // --- Toggle mute function ---
-  const toggleMute = (e) => {
-    e.stopPropagation(); // Prevent other click handlers
-    const vid = videoRef.current;
-    if (vid) {
-      vid.muted = !vid.muted;
-      setIsMuted(vid.muted);
-    }
-  };
-
-  // --- Handle card expand/collapse (controlled) ---
-  const handleToggleOpen = () => {
-    if (isOpen) {
-      setOpenCard(null); // close if this one is open
-    } else {
-      setOpenCard(id); // open this and implicitly close others
-    }
-
-    const vid = videoRef.current;
-    if (vid) {
-      if (!isOpen) {
-        // being opened
-        vid.play();
-        setIsPlaying(true);
-      } else {
-        // being closed
-        vid.pause();
-        setIsPlaying(false);
-      }
-    }
-  };
-
-  // --- Sync video state when open changes ---
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (vid) {
-      if (isOpen) {
-        vid.play();
-        setIsPlaying(true);
-      } else {
-        vid.pause();
-        setIsPlaying(false);
-      }
-    }
+    const v = videoRef.current;
+    if (v) isOpen ? v.play().catch(() => {}) : v.pause();
   }, [isOpen]);
 
-  // --- Sync muted state with video element ---
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (vid) {
-      vid.muted = isMuted;
-    }
-  }, [isMuted]);
-
-  // --- Listen for video play/pause events ---
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-
-    vid.addEventListener("play", onPlay);
-    vid.addEventListener("pause", onPause);
-
-    return () => {
-      vid.removeEventListener("play", onPlay);
-      vid.removeEventListener("pause", onPause);
-    };
-  }, []);
-
-  // --- Fullscreen helpers (desktop + iOS/Android) ---
-  const enterFullscreen = async () => {
-    const vid = videoRef.current;
-    const box = containerRef.current;
-    if (!vid) return;
-
-    try {
-      // iOS Safari prefers video.webkitEnterFullscreen()
-      if (typeof vid.webkitEnterFullscreen === "function") {
-        vid.webkitEnterFullscreen();
-        setIsFullscreen(true);
-        return;
-      }
-      // Standard Fullscreen API (prefer container so overlay button hides)
-      if (box?.requestFullscreen) {
-        await box.requestFullscreen({ navigationUI: "hide" });
-        setIsFullscreen(true);
-        return;
-      }
-      if (vid.requestFullscreen) {
-        await vid.requestFullscreen();
-        setIsFullscreen(true);
-        return;
-      }
-    } catch (e) {
-      console.error("Fullscreen error:", e);
-    }
+  const save = async () => {
+    const diffA = parseFloat(local.Andy || 0) - parseFloat(weights.Andy || 0);
+    const diffP = parseFloat(local.Petronela || 0) - parseFloat(weights.Petronela || 0);
+    let msg = [];
+    if (diffA > 0) msg.push(`Andy +${diffA}kg`);
+    if (diffP > 0) msg.push(`Petronela +${diffP}kg`);
+    
+    await onSave({ Andy: String(local.Andy).replace(/[^\d.]/g, ""), Petronela: String(local.Petronela).replace(/[^\d.]/g, "") });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1200);
+    if (msg.length) setGrowthMsg(msg.join("\n"));
   };
 
-  const exitFullscreen = async () => {
-    const vid = videoRef.current;
-    // iOS Safari
-    if (
-      vid &&
-      typeof vid.webkitExitFullscreen === "function" &&
-      vid.webkitDisplayingFullscreen
-    ) {
-      try {
-        vid.webkitExitFullscreen();
-      } catch {}
-      setIsFullscreen(false);
-      return;
-    }
-    // Standard
-    if (document.fullscreenElement) {
-      try {
-        await document.exitFullscreen();
-      } catch {}
-      setIsFullscreen(false);
-    }
-  };
-
-  const toggleFullscreen = (e) => {
-    e.stopPropagation(); // Prevent other click handlers
-    if (isFullscreen || document.fullscreenElement) exitFullscreen();
-    else enterFullscreen();
-  };
-
-  // Track fullscreen changes (standard + iOS webkit events)
-  useEffect(() => {
-    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    document.addEventListener("fullscreenchange", onChange);
-    const vid = videoRef.current;
-    const onWebkitBegin = () => setIsFullscreen(true);
-    const onWebkitEnd = () => setIsFullscreen(false);
-    if (vid) {
-      vid.addEventListener("webkitbeginfullscreen", onWebkitBegin);
-      vid.addEventListener("webkitendfullscreen", onWebkitEnd);
-    }
-    return () => {
-      document.removeEventListener("fullscreenchange", onChange);
-      if (vid) {
-        vid.removeEventListener("webkitbeginfullscreen", onWebkitBegin);
-        vid.removeEventListener("webkitendfullscreen", onWebkitEnd);
-      }
-    };
-  }, []);
-
-  // Apply different styles based on fullscreen state
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-
-    if (isFullscreen) {
-      // In fullscreen, make video fill the entire screen
-      vid.style.width = "100vw";
-      vid.style.height = "100vh";
-      vid.style.objectFit = "contain"; // or 'cover' if you want to fill completely
-      vid.style.position = "fixed";
-      vid.style.top = "0";
-      vid.style.left = "0";
-      vid.style.zIndex = "9999";
+  const handleVideo = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      const v = videoRef.current;
+      v?.webkitEnterFullscreen ? v.webkitEnterFullscreen() : v?.requestFullscreen?.();
     } else {
-      // Reset to normal styles when exiting fullscreen
-      vid.style.width = "";
-      vid.style.height = "";
-      vid.style.objectFit = "";
-      vid.style.position = "";
-      vid.style.top = "";
-      vid.style.left = "";
-      vid.style.zIndex = "";
+      videoRef.current?.paused ? videoRef.current.play() : videoRef.current.pause();
     }
-  }, [isFullscreen]);
-
-  // Gradient shell for glass border
-  const shell = completed
-    ? "from-emerald-600/50 via-emerald-500/25 to-sky-500/25"
-    : "from-slate-700/60 via-emerald-600/25 to-sky-600/25";
+    lastTapRef.current = now;
+  };
 
   return (
-    <div className={["rounded-2xl p-[1px] bg-gradient-to-r", shell].join(" ")}>
-      <article
-        className={[
-          "rounded-[1rem] border border-slate-800/70 bg-slate-900/60 backdrop-blur shadow-lg transition-transform",
-          "hover:-translate-y-[1px] active:translate-y-0",
-        ].join(" ")}
-      >
-        {/* Collapsed header */}
-        <header className="flex items-center gap-3 px-4 py-3">
-          <Check checked={completed} onChange={(v) => onToggle(v)} />
-
-          <button onClick={handleToggleOpen} className="flex-1 text-left">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-700 text-slate-300 bg-slate-900/60">
-                {index === 0 ? "Warmup" : `#${index}`}
-              </span>
-              <h3 className="text-[15px] font-semibold leading-tight text-white">
-                {exercise.title}
-              </h3>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Tap to {isOpen ? "collapse" : "expand"}
-            </p>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <span
-              className={[
-                "text-[10px] px-2 py-1 rounded-full border",
-                completed
-                  ? "border-emerald-500 text-emerald-300"
-                  : "border-slate-700 text-slate-400",
-              ].join(" ")}
-            >
-              {completed ? "Done" : "Pending"}
-            </span>
-            <svg
-              viewBox="0 0 24 24"
-              className={[
-                "h-4 w-4 text-slate-400 transition-transform duration-300 ease-in-out",
-                isOpen ? "rotate-180" : "rotate-0",
-              ].join(" ")}
-            >
-              <path
-                fill="currentColor"
-                d="M7.41 8.58 12 13.17l4.59-4.59L18 10l-6 6-6-6z"
-              />
-            </svg>
-          </div>
-        </header>
-
-        {/* Expanded body */}
-        <div
-          className={[
-            "grid transition-all duration-300 ease-in-out",
-            isOpen
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0",
-          ].join(" ")}
+    <div className={`transition-colors duration-200 ${isOpen ? 'bg-slate-900/40' : 'bg-transparent'}`}>
+      {/* Row Header */}
+      <div className="flex items-center py-4 px-2 gap-4 active:bg-slate-800/50 cursor-pointer" onClick={() => setOpenCard(isOpen ? null : id)}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onToggle(!completed); }}
+          className={`h-6 w-6 rounded-full border flex items-center justify-center transition-all ${completed ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700 text-transparent'}`}
         >
-          <div className="overflow-hidden">
-            <div className="px-4 pb-4 space-y-4">
-              <p className="text-sm text-slate-300">{exercise.description}</p>
+          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>
+        </button>
 
-              {/* Inputs */}
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs text-slate-400">Andy (kg)</span>
+        <div className="flex-1">
+          <h3 className={`text-sm font-semibold tracking-tight ${completed ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+            {exercise.title}
+          </h3>
+          <p className="text-[10px] text-slate-500 uppercase font-mono mt-0.5">
+            {index === 0 ? 'Warmup' : `0${index}`} — {exercise.description.split('—')[1] || '3x8'}
+          </p>
+        </div>
+
+        <div className="text-right">
+            <span className="text-[10px] font-mono text-slate-600 block">LAST LOAD</span>
+            <span className="text-xs font-bold text-slate-400">{weights.Andy || '—'}/{weights.Petronela || '—'}kg</span>
+        </div>
+      </div>
+
+      {/* Detail Block */}
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="px-12 pb-6 space-y-6">
+          <p className="text-xs text-slate-400 leading-relaxed border-l-2 border-slate-800 pl-4">{exercise.description}</p>
+          
+          <div className="flex gap-4">
+            {[["Andy", "A"], ["Petronela", "P"]].map(([name, initial]) => (
+              <div key={name} className="flex-1 group">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase">{initial}</span>
                   <input
                     inputMode="decimal"
-                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2
-                  focus:outline-none focus:ring-1 focus:ring-emerald-500
-                  text-white placeholder:text-slate-600 text-[16px] leading-6"
-                    value={local.Andy}
-                    onChange={(e) =>
-                      setLocal((s) => ({ ...s, Andy: e.target.value }))
-                    }
-                    placeholder="—"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-2.5 text-sm text-white focus:border-slate-500 outline-none transition-colors"
+                    value={local[name]}
+                    onChange={(e) => setLocal(s => ({ ...s, [name]: e.target.value }))}
                   />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs text-slate-400">Petronela (kg)</span>
-                  <input
-                    inputMode="decimal"
-                    className="w-full rounded-lg bg-slate-950/70 border border-slate-800 px-3 py-2
-                  focus:outline-none focus:ring-1 focus:ring-emerald-500
-                  text-white placeholder:text-slate-600 text-[16px] leading-6"
-                    value={local.Petronela}
-                    onChange={(e) =>
-                      setLocal((s) => ({ ...s, Petronela: e.target.value }))
-                    }
-                    placeholder="—"
-                  />
-                </label>
-              </div>
-
-              {/* Save */}
-              <button
-                onClick={save}
-                className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-sky-500 text-white py-2 text-sm font-medium active:scale-[.99] transition"
-              >
-                {saved ? "Saved ✓" : "Save"}
-              </button>
-
-              {/* Media with video controls */}
-              <div
-                ref={containerRef}
-                className="relative overflow-hidden rounded-2xl border border-slate-800"
-              >
-                <video
-                  ref={videoRef}
-                  src={src}
-                  loop
-                  muted
-                  playsInline
-                  onClick={handleVideoTap}
-                  className="w-full h-48 object-cover bg-black cursor-pointer"
-                />
-
-                {/* Play/Pause indicator */}
-                <div
-                  className={[
-                    "absolute left-2 bottom-2 rounded-lg border border-slate-700/70 bg-slate-900/70 backdrop-blur px-2 py-1 transition-opacity duration-300",
-                    !isPlaying ? "opacity-100" : "opacity-0",
-                  ].join(" ")}
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-slate-200">
-                    <path fill="currentColor" d="M8 5v14l11-7z" />
-                  </svg>
                 </div>
-
-                {/* Volume control button */}
-                <button
-                  type="button"
-                  onClick={toggleMute}
-                  className="absolute left-2 top-2 rounded-lg border border-slate-700/70 bg-slate-900/70 backdrop-blur px-2 py-1 text-[11px] text-slate-200 hover:border-slate-600 active:scale-95 transition"
-                  aria-label={isMuted ? "Unmute" : "Mute"}
-                >
-                  {isMuted ? (
-                    // Muted icon
-                    <svg viewBox="0 0 24 24" className="h-4 w-4">
-                      <path
-                        fill="currentColor"
-                        d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
-                      />
-                    </svg>
-                  ) : (
-                    // Unmuted icon
-                    <svg viewBox="0 0 24 24" className="h-4 w-4">
-                      <path
-                        fill="currentColor"
-                        d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
-                      />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Helper text for exiting fullscreen */}
-                {isFullscreen && (
-                  <div
-                    className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-black/50 px-3 py-1 text-sm text-white pointer-events-none transition-opacity duration-300"
-                    style={{ zIndex: 10000 }}
-                  >
-                    Double tap to exit
-                  </div>
-                )}
-
-                {/* Fullscreen toggle button (Normal view) */}
-                <button
-                  type="button"
-                  onClick={toggleFullscreen}
-                  className="absolute right-2 top-2 rounded-lg border border-slate-700/70 bg-slate-900/70 backdrop-blur px-2 py-1 text-[11px] text-slate-200 hover:border-slate-600 active:scale-95 transition"
-                  aria-label={
-                    isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
-                  }
-                >
-                  {isFullscreen ? (
-                    // exit icon
-                    <svg viewBox="0 0 24 24" className="h-4 w-4">
-                      <path
-                        fill="currentColor"
-                        d="M7 14H5v5h5v-2H7v-3zm12 5h-5v-2h3v-3h2v5zM7 7h3V5H5v5h2V7zm12 3h-2V5h-5v2h3v3h4z"
-                      />
-                    </svg>
-                  ) : (
-                    // enter icon
-                    <svg viewBox="0 0 24 24" className="h-4 w-4">
-                      <path
-                        fill="currentColor"
-                        d="M7 14H5v5h5v-2H7v-3zm12-9h-5v2h3v3h2V5zM7 7h3V5H5v5h2V7zm12 12h-3v2h5v-5h-2v3z"
-                      />
-                    </svg>
-                  )}
-                </button>
               </div>
-            </div>
+            ))}
+            <button onClick={save} className={`px-4 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${saved ? 'bg-emerald-500 text-slate-950' : 'bg-slate-200 text-slate-950'}`}>
+              {saved ? "Logged" : "Log"}
+            </button>
+          </div>
+
+          <div className="relative rounded-xl overflow-hidden bg-slate-900 aspect-video group">
+            <video
+              ref={videoRef} src={`/videos/${exercise.title.trim()}.mp4`} loop muted={isMuted} playsInline
+              onClick={handleVideo} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+            />
+            <button onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }} className="absolute bottom-2 right-2 p-1.5 rounded bg-black/40 text-slate-400 hover:text-white">
+              {isMuted ? <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" /></svg> : <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" /></svg>}
+            </button>
           </div>
         </div>
-      </article>
+      </div>
 
       {growthMsg && (
-        <Modal title="Progress updated" onClose={() => setGrowthMsg("")}>
-          <p className="whitespace-pre-line text-sm text-slate-200 mb-4">
-            {growthMsg}
-          </p>
-          <button
-            onClick={() => setGrowthMsg("")}
-            className="w-full rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-sky-500 text-white py-2 text-sm font-medium"
-          >
-            Continue
-          </button>
+        <Modal title="Progress Update" onClose={() => setGrowthMsg("")}>
+          <div className="py-2">
+            <p className="text-lg font-mono text-emerald-500 mb-6">{growthMsg}</p>
+            <button onClick={() => setGrowthMsg("")} className="w-full py-3 bg-white text-black font-bold text-xs uppercase tracking-widest">Acknowledge</button>
+          </div>
         </Modal>
       )}
     </div>
   );
 }
-
 ================================================================================
 FILE: app\components\Modal.js
 ================================================================================

@@ -28,9 +28,30 @@ const ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Su
 export default function Page() {
   const [state, setState] = useState({ weights: {}, status: {} });
   const [showSplash, setShowSplash] = useState(true);
-  const [openCard, setOpenCard] = useState(null); // single expanded card
-  const { key: weekKey, week } = useMemo(() => getWeekInfo(), []);
+  const [openCard, setOpenCard] = useState(null);
+  const { key: weekKey, week, year } = useMemo(() => getWeekInfo(), []);
   const days = useMemo(() => ORDER.map((d) => ({ name: d, items: data[d] || [] })), []);
+
+  // Calculate overall progress
+  const overallProgress = useMemo(() => {
+    const weekStatus = state.status[weekKey] || {};
+    let totalExercises = 0;
+    let completedExercises = 0;
+    
+    days.forEach(({ name, items }) => {
+      if (name !== "Monday" && name !== "Tuesday") {
+        totalExercises += items.length;
+        const dayStatus = weekStatus[name] || {};
+        completedExercises += Object.values(dayStatus).filter(Boolean).length;
+      }
+    });
+
+    return {
+      total: totalExercises,
+      completed: completedExercises,
+      percentage: totalExercises ? Math.round((completedExercises / totalExercises) * 100) : 0
+    };
+  }, [state.status, weekKey, days]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowSplash(false), 1500);
@@ -42,7 +63,6 @@ export default function Page() {
       try {
         const res = await fetch("/api/state", { cache: "no-store" });
         const s = await res.json();
-        // weights are GLOBAL now
         setState({ weights: s.weights || {}, status: s.status || {} });
       } catch {}
     })();
@@ -66,7 +86,6 @@ export default function Page() {
     });
   };
 
-  // Save weights globally (persist across weeks)
   const saveWeights = async (day, slug, weights) => {
     setState((s) => ({
       ...s,
@@ -92,16 +111,104 @@ export default function Page() {
     <div className="min-h-screen bg-slate-950 text-slate-100 relative">
       <Splash show={showSplash} />
 
-      <main className="max-w-md mx-auto p-3 pb-20 space-y-6">
-        <header className="sticky top-0 z-10 px-3 py-3 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
-          <h1 className="text-2xl font-extrabold tracking-tight">
-            <span className="bg-gradient-to-r from-emerald-300 via-emerald-400 to-sky-400 bg-clip-text text-transparent">
-              Andy &amp; Petronela
-            </span>
-          </h1>
-          <p className="text-xs text-slate-400">Week W{week}</p>
-        </header>
+      {/* Modern Header with Glass Morphism */}
+      <header className="sticky top-0 z-30 border-b border-slate-800/50 backdrop-blur-xl bg-slate-950/80">
+        {/* Gradient accent line */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+        
+        <div className="max-w-md mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-3">
+              {/* App Icon */}
+              <div className="relative h-11 w-11 rounded-xl bg-gradient-to-br from-emerald-500 to-sky-500 p-[2px] shadow-lg shadow-emerald-500/20">
+                <div className="h-full w-full rounded-[10px] bg-slate-900 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" aria-hidden="true">
+                    <path fill="currentColor" d="M4 9h2v6H4V9zm14 0h2v6h-2V9zM8 11h8v2H8v-2zM6 7h2v10H6V7zm10 0h2v10h-2V7z" />
+                  </svg>
+                </div>
+              </div>
 
+              {/* Title */}
+              <div>
+                <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-400 via-emerald-300 to-sky-400 bg-clip-text text-transparent">
+                  Andy & Petronela
+                </h1>
+                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                  Fitness Tracker
+                </p>
+              </div>
+            </div>
+
+            {/* Week Info Card */}
+            <div className="flex items-center gap-3">
+              {/* Progress Ring */}
+              <div className="relative h-12 w-12">
+                <svg className="transform -rotate-90 h-12 w-12">
+                  <circle
+                    cx="24"
+                    cy="24"
+                    r="20"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="none"
+                    className="text-slate-800"
+                  />
+                  <circle
+                    cx="24"
+                    cy="24"
+                    r="20"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 20}`}
+                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - overallProgress.percentage / 100)}`}
+                    className={`transition-all duration-500 ${
+                      overallProgress.percentage === 100 
+                        ? 'text-emerald-400' 
+                        : overallProgress.percentage > 50 
+                        ? 'text-sky-400' 
+                        : 'text-slate-600'
+                    }`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white">
+                    {overallProgress.percentage}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Week Badge */}
+              <div className="text-right">
+                <div className="text-xs font-bold text-slate-200">
+                  Week {week}
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">
+                  {year}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Stats Bar */}
+          <div className="mt-4 flex items-center gap-2">
+            <div className="flex-1 h-1.5 bg-slate-800/50 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-sky-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${overallProgress.percentage}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-mono text-slate-500 min-w-[60px] text-right">
+              {overallProgress.completed}/{overallProgress.total}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-md mx-auto px-4 py-6 pb-24 space-y-6">
         {days.map(({ name, items }) => (
           <DaySection
             key={name}
